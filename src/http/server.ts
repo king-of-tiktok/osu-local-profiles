@@ -367,7 +367,11 @@ export function startServer(opts: ServerOptions): http.Server {
        * request rather than a payload sized for the largest thing anyone might scroll to.
        */
       const page = (name: string, fallback: number) => {
-        const asked = Number(url.searchParams.get(name));
+        // `Number(null)` is 0, not NaN, so an absent parameter has to be rejected before the
+        // finite check -- otherwise every unparameterised request clamped to a page of one.
+        const raw = url.searchParams.get(name);
+        if (raw === null || raw.trim() === '') return fallback;
+        const asked = Number(raw);
         if (!Number.isFinite(asked)) return fallback;
         // Clamped: this is a query parameter, and an unbounded one would let a stray URL
         // ask the database to build a list of every score ever tracked.
